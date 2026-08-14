@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#101820" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Shopify" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icons/icons8-shopify-180.png" type="image/png" />
+    <link rel="apple-touch-icon" href="icons/icons8-shopify-180.png" />
+    <link rel="stylesheet" href="style.css" />
+    <title>Purchase Alerts</title>
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="panel">
+        <header class="topbar">
+          <div class="brand">
+            <span class="brand-mark" aria-hidden="true">$</span>
+            <div>
+              <h1>Purchase Alerts</h1>
+              <p>Home screen notification settings</p>
+            </div>
+          </div>
+          <span class="status-pill" id="permissionStatus">Checking</span>
+        </header>
+
+        <form id="settingsForm" class="settings-grid">
+          <label class="field">
+            <span>Send every</span>
+            <div class="input-row">
+              <input id="intervalValue" name="intervalValue" type="number" min="0.001" step="0.001" inputmode="decimal" required />
+              <select id="intervalUnit" name="intervalUnit" aria-label="Interval unit">
+                <option value="milliseconds">Milliseconds</option>
+                <option value="seconds">Seconds</option>
+                <option value="minutes">Minutes</option>
+                <option value="hours">Hours</option>
+                <option value="days">Days</option>
+              </select>
+            </div>
+            <small class="field-hint" id="intervalSummary"></small>
+          </label>
+
+          <label class="field">
+            <span>USD amount</span>
+            <div class="money-input">
+              <span aria-hidden="true">$</span>
+              <input id="amount" name="amount" type="number" min="0" step="0.01" inputmode="decimal" required />
+            </div>
+          </label>
+
+          <label class="field field-wide">
+            <span>Notification title</span>
+            <input id="title" name="title" type="text" maxlength="60" required />
+          </label>
+
+          <label class="field field-wide">
+            <span>Notification texts</span>
+            <textarea id="message" name="message" rows="4" maxlength="500" required></textarea>
+            <small class="field-hint">One text per line. A random one is used each time.</small>
+          </label>
+
+          <label class="toggle field-wide">
+            <input id="enabled" name="enabled" type="checkbox" />
+            <span class="toggle-control" aria-hidden="true"></span>
+            <span>
+              <strong>Notifications enabled</strong>
+              <small>Uses backend push so alerts can arrive when the app is closed.</small>
+            </span>
+          </label>
+
+          <div class="actions field-wide">
+            <button class="primary" type="submit">Save settings</button>
+            <button class="secondary" id="testButton" type="button">Send test</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="preview" aria-live="polite">
+        <div class="phone">
+          <div class="notification-card">
+            <div class="notification-head">
+              <span class="app-dot">$</span>
+              <span>Purchase Alerts</span>
+              <time>now</time>
+            </div>
+            <strong id="previewTitle">New Shopify purchase</strong>
+            <p id="previewBody"></p>
+          </div>
+        </div>
+        <div class="install-note" id="installNote"></div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
