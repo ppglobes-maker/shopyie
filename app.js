@@ -176,13 +176,19 @@ async function getServiceWorkerRegistration() {
 }
 
 async function apiRequest(path, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      'content-type': 'application/json',
-      ...(options.headers || {}),
-    },
-  });
+  let response;
+
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      headers: {
+        'content-type': 'application/json',
+        ...(options.headers || {}),
+      },
+    });
+  } catch {
+    throw new Error(`Could not reach ${API_BASE_URL}. Check HTTPS, DNS, Caddy, backend, and ALLOWED_ORIGIN.`);
+  }
 
   if (!response.ok) {
     const error = await response.text();
