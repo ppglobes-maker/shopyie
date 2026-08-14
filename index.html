@@ -28,8 +28,17 @@
         </header>
 
         <form id="settingsForm" class="settings-grid">
-          <label class="field">
-            <span>Send every</span>
+          <label class="field field-wide">
+            <span>Timing mode</span>
+            <select id="timingMode" name="timingMode">
+              <option value="exact">Exact interval</option>
+              <option value="random">Random range</option>
+              <option value="jitter">Interval with variation</option>
+            </select>
+          </label>
+
+          <label class="field timing-field timing-exact timing-jitter">
+            <span id="intervalLabel">Send every</span>
             <div class="input-row">
               <input id="intervalValue" name="intervalValue" type="number" min="0.001" step="0.001" inputmode="decimal" required />
               <select id="intervalUnit" name="intervalUnit" aria-label="Interval unit">
@@ -40,8 +49,35 @@
                 <option value="days">Days</option>
               </select>
             </div>
-            <small class="field-hint" id="intervalSummary"></small>
           </label>
+
+          <label class="field timing-field timing-random">
+            <span>Minimum delay</span>
+            <input id="minIntervalValue" name="minIntervalValue" type="number" min="0.001" step="0.001" inputmode="decimal" />
+          </label>
+
+          <label class="field timing-field timing-random">
+            <span>Maximum delay</span>
+            <input id="maxIntervalValue" name="maxIntervalValue" type="number" min="0.001" step="0.001" inputmode="decimal" />
+          </label>
+
+          <label class="field timing-field timing-random">
+            <span>Range unit</span>
+            <select id="rangeIntervalUnit" name="rangeIntervalUnit">
+              <option value="milliseconds">Milliseconds</option>
+              <option value="seconds">Seconds</option>
+              <option value="minutes">Minutes</option>
+              <option value="hours">Hours</option>
+              <option value="days">Days</option>
+            </select>
+          </label>
+
+          <label class="field timing-field timing-jitter">
+            <span>Variation percent</span>
+            <input id="jitterPercent" name="jitterPercent" type="number" min="0" max="100" step="1" inputmode="numeric" />
+          </label>
+
+          <p class="field-hint field-wide" id="intervalSummary"></p>
 
           <label class="field field-wide">
             <span>Notification title</span>

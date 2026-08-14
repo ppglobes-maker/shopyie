@@ -1,8 +1,13 @@
 const API_BASE_URL = 'https://api.realandrare.lat';
 
 const defaults = {
+  timingMode: 'exact',
   intervalValue: 15,
   intervalUnit: 'minutes',
+  minIntervalValue: 10,
+  maxIntervalValue: 20,
+  rangeIntervalUnit: 'minutes',
+  jitterPercent: 25,
   title: 'New Shopify purchase',
   messages: ['You have a new purchase.'],
   enabled: false,
@@ -12,8 +17,13 @@ const storageKey = 'purchase-alert-settings';
 const subscriptionKey = 'purchase-alert-subscription';
 
 const form = document.querySelector('#settingsForm');
+const timingMode = document.querySelector('#timingMode');
 const intervalValue = document.querySelector('#intervalValue');
 const intervalUnit = document.querySelector('#intervalUnit');
+const minIntervalValue = document.querySelector('#minIntervalValue');
+const maxIntervalValue = document.querySelector('#maxIntervalValue');
+const rangeIntervalUnit = document.querySelector('#rangeIntervalUnit');
+const jitterPercent = document.querySelector('#jitterPercent');
 const title = document.querySelector('#title');
 const messageList = document.querySelector('#messageList');
 const enabled = document.querySelector('#enabled');
@@ -90,9 +100,17 @@ function readMessages() {
 }
 
 function readForm() {
+  const minValue = Math.max(0.001, Number(minIntervalValue.value || defaults.minIntervalValue));
+  const maxValue = Math.max(minValue, Number(maxIntervalValue.value || defaults.maxIntervalValue));
+
   return {
+    timingMode: timingMode.value,
     intervalValue: Math.max(0.001, Number(intervalValue.value || defaults.intervalValue)),
     intervalUnit: intervalUnit.value,
+    minIntervalValue: minValue,
+    maxIntervalValue: maxValue,
+    rangeIntervalUnit: rangeIntervalUnit.value,
+    jitterPercent: Math.min(100, Math.max(0, Number(jitterPercent.value || defaults.jitterPercent))),
     title: title.value.trim() || defaults.title,
     messages: readMessages(),
     enabled: enabled.checked,
@@ -100,13 +118,28 @@ function readForm() {
 }
 
 function writeForm(settings) {
+  timingMode.value = settings.timingMode || defaults.timingMode;
   intervalValue.value = String(settings.intervalValue);
   intervalUnit.value = settings.intervalUnit;
+  minIntervalValue.value = String(settings.minIntervalValue || defaults.minIntervalValue);
+  maxIntervalValue.value = String(settings.maxIntervalValue || defaults.maxIntervalValue);
+  rangeIntervalUnit.value = settings.rangeIntervalUnit || defaults.rangeIntervalUnit;
+  jitterPercent.value = String(settings.jitterPercent ?? defaults.jitterPercent);
   title.value = settings.title;
   messageList.innerHTML = '';
   normalizeMessages(settings).forEach((item) => createMessageRow(item));
   if (!messageList.children.length) createMessageRow(defaults.messages[0]);
   enabled.checked = settings.enabled;
+}
+
+function updateTimingFields(settings = readForm()) {
+  document.querySelectorAll('.timing-field').forEach((field) => {
+    field.hidden = true;
+  });
+
+  document.querySelectorAll(`.timing-${settings.timingMode}`).forEach((field) => {
+    field.hidden = false;
+  });
 }
 
 function notificationBody(settings) {
@@ -121,7 +154,16 @@ function notificationBody(settings) {
 function updatePreview(settings = readForm()) {
   previewTitle.textContent = settings.title;
   previewBody.textContent = notificationBody(settings);
-  intervalSummary.textContent = `Sends every ${settings.intervalValue} ${settings.intervalUnit}.`;
+
+  if (settings.timingMode === 'random') {
+    intervalSummary.textContent = `Sends randomly every ${settings.minIntervalValue}-${settings.maxIntervalValue} ${settings.rangeIntervalUnit}.`;
+  } else if (settings.timingMode === 'jitter') {
+    intervalSummary.textContent = `Sends around every ${settings.intervalValue} ${settings.intervalUnit}, varied by ${settings.jitterPercent}%.`;
+  } else {
+    intervalSummary.textContent = `Sends every ${settings.intervalValue} ${settings.intervalUnit}.`;
+  }
+
+  updateTimingFields(settings);
 }
 
 function updatePermissionStatus() {
@@ -256,6 +298,7 @@ function setInstallNote() {
 }
 
 form.addEventListener('input', () => updatePreview());
+timingMode.addEventListener('change', () => updatePreview());
 
 addMessageButton.addEventListener('click', () => {
   createMessageRow();
