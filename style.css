@@ -51,7 +51,6 @@ textarea {
 .notification-head,
 .actions,
 .input-row,
-.money-input,
 .toggle {
   display: flex;
   align-items: center;
@@ -177,27 +176,23 @@ textarea:focus {
   gap: 10px;
 }
 
+.message-list {
+  display: grid;
+  gap: 10px;
+}
+
+.message-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 48px;
+  gap: 10px;
+}
+
 .input-row input {
   flex: 1 1 42%;
 }
 
 .input-row select {
   flex: 1 1 58%;
-}
-
-.money-input {
-  position: relative;
-}
-
-.money-input span {
-  position: absolute;
-  left: 14px;
-  color: #61d394;
-  font-weight: 800;
-}
-
-.money-input input {
-  padding-left: 34px;
 }
 
 .toggle {
@@ -261,6 +256,16 @@ textarea:focus {
   flex-wrap: wrap;
 }
 
+.action-status {
+  min-height: 20px;
+  color: rgba(246, 248, 246, 0.78);
+  font-size: 0.88rem;
+}
+
+.action-status.error {
+  color: #ff9c9c;
+}
+
 button {
   border: 0;
   border-radius: 8px;
@@ -268,6 +273,17 @@ button {
   padding: 0 18px;
   cursor: pointer;
   font-weight: 800;
+}
+
+.compact {
+  justify-self: start;
+  min-height: 42px;
+}
+
+.icon-button {
+  width: 48px;
+  min-height: 52px;
+  padding: 0;
 }
 
 .primary {

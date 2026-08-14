@@ -43,24 +43,17 @@
             <small class="field-hint" id="intervalSummary"></small>
           </label>
 
-          <label class="field">
-            <span>USD amount</span>
-            <div class="money-input">
-              <span aria-hidden="true">$</span>
-              <input id="amount" name="amount" type="number" min="0" step="0.01" inputmode="decimal" required />
-            </div>
-          </label>
-
           <label class="field field-wide">
             <span>Notification title</span>
             <input id="title" name="title" type="text" maxlength="60" required />
           </label>
 
-          <label class="field field-wide">
+          <div class="field field-wide">
             <span>Notification texts</span>
-            <textarea id="message" name="message" rows="4" maxlength="500" required></textarea>
-            <small class="field-hint">One text per line. A random one is used each time.</small>
-          </label>
+            <div class="message-list" id="messageList"></div>
+            <button class="secondary compact" id="addMessageButton" type="button">Add text</button>
+            <small class="field-hint">A random text is used each time.</small>
+          </div>
 
           <label class="toggle field-wide">
             <input id="enabled" name="enabled" type="checkbox" />
@@ -75,6 +68,7 @@
             <button class="primary" type="submit">Save settings</button>
             <button class="secondary" id="testButton" type="button">Send test</button>
           </div>
+          <p class="action-status field-wide" id="actionStatus" role="status"></p>
         </form>
       </section>
 

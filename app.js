@@ -3,9 +3,8 @@ const API_BASE_URL = 'https://api.realandrare.lat';
 const defaults = {
   intervalValue: 15,
   intervalUnit: 'minutes',
-  amount: 49.99,
   title: 'New Shopify purchase',
-  message: 'You have a new purchase.',
+  messages: ['You have a new purchase.'],
   enabled: false,
 };
 
@@ -15,36 +14,87 @@ const subscriptionKey = 'purchase-alert-subscription';
 const form = document.querySelector('#settingsForm');
 const intervalValue = document.querySelector('#intervalValue');
 const intervalUnit = document.querySelector('#intervalUnit');
-const amount = document.querySelector('#amount');
 const title = document.querySelector('#title');
-const message = document.querySelector('#message');
+const messageList = document.querySelector('#messageList');
 const enabled = document.querySelector('#enabled');
 const permissionStatus = document.querySelector('#permissionStatus');
 const previewTitle = document.querySelector('#previewTitle');
 const previewBody = document.querySelector('#previewBody');
 const testButton = document.querySelector('#testButton');
+const addMessageButton = document.querySelector('#addMessageButton');
 const installNote = document.querySelector('#installNote');
 const intervalSummary = document.querySelector('#intervalSummary');
+const actionStatus = document.querySelector('#actionStatus');
 const iconUrl = new URL('icons/icons8-shopify-180.png', location.href).href;
+
+function normalizeMessages(settings) {
+  if (Array.isArray(settings.messages)) {
+    return settings.messages.map((item) => String(item).trim()).filter(Boolean);
+  }
+
+  if (typeof settings.message === 'string') {
+    return settings.message.split('\n').map((item) => item.trim()).filter(Boolean);
+  }
+
+  return defaults.messages;
+}
 
 function loadSettings() {
   const raw = localStorage.getItem(storageKey);
-  if (!raw) return defaults;
+  if (!raw) return { ...defaults };
 
   try {
-    return { ...defaults, ...JSON.parse(raw) };
+    const parsed = { ...defaults, ...JSON.parse(raw) };
+    return { ...parsed, messages: normalizeMessages(parsed) };
   } catch {
-    return defaults;
+    return { ...defaults };
   }
+}
+
+function createMessageRow(value = '') {
+  const row = document.createElement('div');
+  row.className = 'message-row';
+
+  const input = document.createElement('input');
+  input.className = 'message-input';
+  input.type = 'text';
+  input.maxLength = 160;
+  input.required = true;
+  input.value = value;
+  input.placeholder = 'Notification text';
+
+  const remove = document.createElement('button');
+  remove.className = 'secondary icon-button';
+  remove.type = 'button';
+  remove.textContent = 'x';
+  remove.setAttribute('aria-label', 'Remove text');
+  remove.addEventListener('click', () => {
+    if (messageList.querySelectorAll('.message-input').length === 1) {
+      input.value = '';
+    } else {
+      row.remove();
+    }
+    updatePreview();
+  });
+
+  row.append(input, remove);
+  messageList.append(row);
+}
+
+function readMessages() {
+  const messages = Array.from(messageList.querySelectorAll('.message-input'))
+    .map((input) => input.value.trim())
+    .filter(Boolean);
+
+  return messages.length ? messages : defaults.messages;
 }
 
 function readForm() {
   return {
     intervalValue: Math.max(0.001, Number(intervalValue.value || defaults.intervalValue)),
     intervalUnit: intervalUnit.value,
-    amount: Math.max(0, Number(amount.value || defaults.amount)),
     title: title.value.trim() || defaults.title,
-    message: message.value.trim() || defaults.message,
+    messages: readMessages(),
     enabled: enabled.checked,
   };
 }
@@ -52,29 +102,20 @@ function readForm() {
 function writeForm(settings) {
   intervalValue.value = String(settings.intervalValue);
   intervalUnit.value = settings.intervalUnit;
-  amount.value = settings.amount.toFixed(2);
   title.value = settings.title;
-  message.value = settings.message;
+  messageList.innerHTML = '';
+  normalizeMessages(settings).forEach((item) => createMessageRow(item));
+  if (!messageList.children.length) createMessageRow(defaults.messages[0]);
   enabled.checked = settings.enabled;
 }
 
-function formatCurrency(value) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(value);
-}
-
 function notificationBody(settings) {
-  const messages = settings.message
-    .split('\n')
-    .map((item) => item.trim())
-    .filter(Boolean);
-  const firstMessage = messages[0] || defaults.message;
+  const messages = normalizeMessages(settings);
+  const firstMessage = messages[0] || defaults.messages[0];
   const extraCount = Math.max(0, messages.length - 1);
   const suffix = extraCount ? ` (+${extraCount} more)` : '';
 
-  return `${firstMessage}${suffix} Amount: ${formatCurrency(settings.amount)}`;
+  return `${firstMessage}${suffix}`;
 }
 
 function updatePreview(settings = readForm()) {
@@ -92,6 +133,11 @@ function updatePermissionStatus() {
 
   permissionStatus.textContent = Notification.permission;
   permissionStatus.className = `status-pill ${Notification.permission}`;
+}
+
+function setActionStatus(message, isError = false) {
+  actionStatus.textContent = message;
+  actionStatus.className = `action-status field-wide${isError ? ' error' : ''}`;
 }
 
 async function ensurePermission() {
@@ -205,33 +251,53 @@ function setInstallNote() {
 
 form.addEventListener('input', () => updatePreview());
 
+addMessageButton.addEventListener('click', () => {
+  createMessageRow();
+  updatePreview();
+});
+
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
   const settings = readForm();
   save(settings);
 
-  if (settings.enabled) {
-    await subscribe(settings);
-  } else {
-    await unsubscribe();
+  try {
+    if (settings.enabled) {
+      await subscribe(settings);
+      setActionStatus('Saved. Push notifications are enabled.');
+    } else {
+      await unsubscribe();
+      setActionStatus('Saved. Push notifications are disabled.');
+    }
+  } catch (error) {
+    setActionStatus(error.message || 'Could not save push settings.', true);
   }
 });
 
 testButton.addEventListener('click', async () => {
   const settings = readForm();
   save(settings);
-  const subscription = await subscribe(settings);
-  if (!subscription) return;
 
-  await apiRequest('/test', {
-    method: 'POST',
-    body: JSON.stringify({
-      endpoint: subscription.endpoint,
-      settings,
-      pageUrl: location.href,
-      iconUrl,
-    }),
-  });
+  try {
+    const subscription = await subscribe(settings);
+    if (!subscription) {
+      setActionStatus('Notification permission was not granted.', true);
+      return;
+    }
+
+    await apiRequest('/test', {
+      method: 'POST',
+      body: JSON.stringify({
+        endpoint: subscription.endpoint,
+        settings,
+        pageUrl: location.href,
+        iconUrl,
+      }),
+    });
+    setActionStatus('Test notification sent.');
+  } catch (error) {
+    setActionStatus(error.message || 'Could not send test notification.', true);
+  }
 });
 
 if ('serviceWorker' in navigator) {
