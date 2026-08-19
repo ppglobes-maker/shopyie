@@ -8,7 +8,8 @@ const defaults = {
   maxIntervalValue: 20,
   rangeIntervalUnit: 'minutes',
   jitterPercent: 25,
-  title: 'New Shopify purchase',
+  title: 'Order',
+  orderNumber: 689,
   messages: ['You have a new purchase.'],
   enabled: false,
 };
@@ -25,6 +26,7 @@ const maxIntervalValue = document.querySelector('#maxIntervalValue');
 const rangeIntervalUnit = document.querySelector('#rangeIntervalUnit');
 const jitterPercent = document.querySelector('#jitterPercent');
 const title = document.querySelector('#title');
+const orderNumber = document.querySelector('#orderNumber');
 const messageList = document.querySelector('#messageList');
 const enabled = document.querySelector('#enabled');
 const permissionStatus = document.querySelector('#permissionStatus');
@@ -55,31 +57,34 @@ function loadSettings() {
 
   try {
     const parsed = { ...defaults, ...JSON.parse(raw) };
-    return { ...parsed, messages: normalizeMessages(parsed) };
+    return {
+      ...parsed,
+      messages: normalizeMessages(parsed),
+    };
   } catch {
     return { ...defaults };
   }
 }
 
-function createMessageRow(value = '') {
+function createListRow(list, className, placeholder, removeLabel, value = '') {
   const row = document.createElement('div');
   row.className = 'message-row';
 
   const input = document.createElement('input');
-  input.className = 'message-input';
+  input.className = className;
   input.type = 'text';
   input.maxLength = 160;
   input.required = true;
   input.value = value;
-  input.placeholder = 'Notification text';
+  input.placeholder = placeholder;
 
   const remove = document.createElement('button');
   remove.className = 'secondary icon-button';
   remove.type = 'button';
   remove.textContent = 'x';
-  remove.setAttribute('aria-label', 'Remove text');
+  remove.setAttribute('aria-label', removeLabel);
   remove.addEventListener('click', () => {
-    if (messageList.querySelectorAll('.message-input').length === 1) {
+    if (list.querySelectorAll(`.${className}`).length === 1) {
       input.value = '';
     } else {
       row.remove();
@@ -88,7 +93,11 @@ function createMessageRow(value = '') {
   });
 
   row.append(input, remove);
-  messageList.append(row);
+  list.append(row);
+}
+
+function createMessageRow(value = '') {
+  createListRow(messageList, 'message-input', 'Notification text', 'Remove text', value);
 }
 
 function readMessages() {
@@ -112,6 +121,7 @@ function readForm() {
     rangeIntervalUnit: rangeIntervalUnit.value,
     jitterPercent: Math.min(100, Math.max(0, Number(jitterPercent.value || defaults.jitterPercent))),
     title: title.value.trim() || defaults.title,
+    orderNumber: Math.max(1, Math.floor(Number(orderNumber.value || defaults.orderNumber))),
     messages: readMessages(),
     enabled: enabled.checked,
   };
@@ -125,7 +135,8 @@ function writeForm(settings) {
   maxIntervalValue.value = String(settings.maxIntervalValue || defaults.maxIntervalValue);
   rangeIntervalUnit.value = settings.rangeIntervalUnit || defaults.rangeIntervalUnit;
   jitterPercent.value = String(settings.jitterPercent ?? defaults.jitterPercent);
-  title.value = settings.title;
+  title.value = settings.title || defaults.title;
+  orderNumber.value = String(settings.orderNumber || defaults.orderNumber);
   messageList.innerHTML = '';
   normalizeMessages(settings).forEach((item) => createMessageRow(item));
   if (!messageList.children.length) createMessageRow(defaults.messages[0]);
@@ -152,7 +163,7 @@ function notificationBody(settings) {
 }
 
 function updatePreview(settings = readForm()) {
-  previewTitle.textContent = settings.title;
+  previewTitle.textContent = `${settings.title} #${settings.orderNumber}`;
   previewBody.textContent = notificationBody(settings);
 
   if (settings.timingMode === 'random') {

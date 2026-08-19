@@ -79,9 +79,14 @@
 
           <p class="field-hint field-wide" id="intervalSummary"></p>
 
-          <label class="field field-wide">
+          <label class="field">
             <span>Notification title</span>
-            <input id="title" name="title" type="text" maxlength="60" required />
+            <input id="title" name="title" type="text" maxlength="50" required />
+          </label>
+
+          <label class="field">
+            <span>Starting #</span>
+            <input id="orderNumber" name="orderNumber" type="number" min="1" step="1" inputmode="numeric" required />
           </label>
 
           <div class="field field-wide">
